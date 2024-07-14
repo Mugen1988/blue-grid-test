@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Fetcher</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="loading">Loading...</div>
+    <pre id="data"></pre>
+    <div id="pagination"></div> <!-- Container for pagination controls -->
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const loadingElement = document.getElementById('loading');
+            const dataElement = document.getElementById('data');
+            const paginationElement = document.getElementById('pagination');
+
+            const fetchData = async (page = 1) => {
+                loadingElement.style.display = 'block';
+
+                try {
+                    const response = await fetch(`/api/files?page=${page}&limit=10`);
+
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+
+                    const { items, totalPages, currentPage } = await response.json();
+
+                    if (items.length === 0) {
+                        dataElement.innerText = 'No items found.';
+                    } else {
+                        dataElement.innerText = JSON.stringify(items, null, 2);
+                    }
+
+                    renderPaginationControls(currentPage, totalPages);
+                } catch (error) {
+                    console.error('Error fetching data:', error);
+                    dataElement.innerText = 'Error fetching data: ' + error.message;
+                    dataElement.classList.add('error');
+                } finally {
+                    loadingElement.style.display = 'none';
+                }
+            };
+
+            const renderPaginationControls = (currentPage, totalPages) => {
+                paginationElement.innerHTML = '';
+
+                if (currentPage > 1) {
+                    const prevButton = document.createElement('button');
+                    prevButton.innerText = 'Previous';
+                    prevButton.onclick = () => fetchData(currentPage - 1);
+                    paginationElement.appendChild(prevButton);
+                }
+
+                if (currentPage < totalPages) {
+                    const nextButton = document.createElement('button');
+                    nextButton.innerText = 'Next';
+                    nextButton.onclick = () => fetchData(currentPage + 1);
+                    paginationElement.appendChild(nextButton);
+                }
+
+                const pageInfo = document.createElement('span');
+                pageInfo.innerText = ` Page ${currentPage} of ${totalPages} `;
+                paginationElement.appendChild(pageInfo);
+            };
+
+            fetchData(); // Initial fetch
+        });
+    </script>
+</body>
+</html>
